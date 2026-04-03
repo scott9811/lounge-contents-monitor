@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>라운지 컨텐츠 모니터링</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --border-light: #f1f5f9;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      --primary: #134CFF;
+      --primary-light: #e8eeff;
+      --primary-dark: #0d3acc;
+      --green: #10b981;
+      --green-light: #ecfdf5;
+      --red: #ef4444;
+      --red-light: #fef2f2;
+      --orange: #f97316;
+      --orange-light: #fff7ed;
+      --yellow: #f59e0b;
+      --yellow-light: #fffbeb;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-xs: 6px;
+    }
+
+    html { scroll-behavior: smooth; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .btn-refresh {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-xs);
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn-refresh:hover { background: var(--primary-dark); }
+    .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Layout ── */
+    main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 48px; }
+
+    /* ── Summary Cards ── */
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 640px) { .summary-cards { grid-template-columns: 1fr; } }
+
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .summary-card-label { font-size: 16px; font-weight: 600; color: var(--text-muted); }
+    .summary-card-value { font-size: 36px; font-weight: 700; letter-spacing: -1.5px; }
+    .summary-card-value.indigo { color: var(--primary); }
+    .summary-card-value.green  { color: var(--green); }
+    .summary-card-value.red    { color: var(--red); }
+
+    /* ── Section ── */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .section-header-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .section-header-desc {
+      font-size: 13px;
+      color: #6b7280;
+      max-width: 400px;
+      text-align: right;
+      line-height: 1.5;
+    }
+    @media (max-width: 640px) { .section-header-desc { display: none; } }
+
+    /* ── Tooltip ── */
+    .tooltip-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .tooltip-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #e5e7eb;
+      color: #6b7280;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: default;
+      flex-shrink: 0;
+      user-select: none;
+      line-height: 1;
+    }
+    .tooltip-box {
+      display: none;
+      position: absolute;
+      left: 22px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #1f2937;
+      color: #fff;
+      font-size: 12px;
+      line-height: 1.55;
+      padding: 8px 12px;
+      border-radius: 6px;
+      width: max-content;
+      max-width: 500px;
+      z-index: 300;
+      white-space: normal;
+      word-break: keep-all;
+      pointer-events: none;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    }
+    /* 화면 우측 잘림 방지: 툴팁이 오른쪽으로 넘칠 경우 좌측으로 열림 */
+    @media (max-width: 700px) {
+      .tooltip-box {
+        left: auto;
+        right: 0;
+        transform: none;
+        top: calc(100% + 6px);
+        max-width: calc(100vw - 48px);
+      }
+    }
+    .tooltip-wrap:hover .tooltip-box { display: block; }
+    .section-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-light);
+      border-radius: 4px;
+      padding: 2px 7px;
+      letter-spacing: 0.3px;
+    }
+    .section-title { font-size: 21px; font-weight: 700; letter-spacing: -0.4px; }
+    .section-body { padding: 20px; }
+
+    /* ── Brand Link ── */
+    .brand-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .brand-link:hover { text-decoration: underline; }
+
+    /* 라운지 열기 버튼 */
+    .btn-lounge {
+      display: inline-flex;
+      align-items: center;
+      background: #111;
+      color: #fff;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 6px;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .btn-lounge:hover { background: #333; }
+
+    /* ── Section 1: Brand Grid ── */
+    .brand-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2px 0;
+    }
+    @media (max-width: 480px) { .brand-grid { grid-template-columns: 1fr; } }
+
+    .brand-grid-item {
+      padding: 6px 8px;
+      border-radius: var(--radius-xs);
+      transition: background 0.1s;
+    }
+    .brand-grid-item:hover { background: var(--primary-light); }
+
+    /* ── Section 2: Table ── */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 16px 12px 10px;
+    }
+    .data-table td {
+      padding: 10px 12px;
+      font-size: 14px;
+      color: var(--text);
+      border: none;
+    }
+    .data-table tbody tr:nth-child(odd) td { background: #ffffff; }
+    .data-table tbody tr:nth-child(even) td { background: #f9fafb; }
+    .data-table tbody tr:hover td { background: var(--primary-light); }
+    .time-kst { color: var(--text-muted); font-size: 12px; }
+
+    /* ── Section 3: Chart ── */
+    .chart-wrap { height: 300px; position: relative; }
+
+    /* ── Section 4: Colors ── */
+    .color-card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 640px) { .color-card-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .color-card {
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      position: relative;
+      cursor: default;
+    }
+    .color-card-swatch {
+      height: 72px;
+      width: 100%;
+    }
+    .color-card-info {
+      padding: 10px 12px;
+      background: var(--surface);
+    }
+    .color-card-hex {
+      font-size: 12px;
+      font-weight: 600;
+      font-family: monospace;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .color-card-count {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* 툴팁 오버레이 */
+    .color-card-tooltip {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.88);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      overflow-y: auto;
+      z-index: 10;
+    }
+    .color-card:hover .color-card-tooltip { display: block; }
+    .color-card-tooltip-item {
+      font-size: 12px;
+      color: #e2e8f0;
+      line-height: 1.8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Section 1: Brand Selector ── */
+    .brand-selector {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 0;
+      min-height: 480px;
+    }
+    @media (max-width: 700px) { .brand-selector { grid-template-columns: 1fr; } }
+
+    /* 좌측 브랜드 목록 */
+    .brand-selector-list {
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      max-height: 560px;
+    }
+    .brand-selector-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-left: 3px solid transparent;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.1s, color 0.1s, border-color 0.1s;
+      line-height: 1.4;
+    }
+    .brand-selector-btn:hover {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+    }
+    .brand-selector-btn.active {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-weight: 600;
+      border-left-color: var(--primary);
+    }
+
+    /* 우측 블럭 상세 */
+    .brand-selector-detail {
+      padding: 0 20px 0 20px;
+      overflow-y: auto;
+      max-height: 560px;
+      border-left: 1px solid var(--border);
+    }
+    .brand-detail-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .brand-detail-name {
+      font-size: 18px;
+      font-weight: 500;
+    }
+    .brand-detail-fade {
+      animation: fadeIn 0.15s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .block-list { display: flex; flex-direction: column; gap: 8px; }
+    .block-card {
+      background: var(--bg);
+      border-radius: var(--radius-xs);
+      padding: 10px 12px;
+    }
+    .block-card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .block-type { font-size: 14px; font-weight: 600; color: var(--text); }
+
+    .badge {
+      display: inline-flex; align-items: center;
+      font-size: 12px; font-weight: 600;
+      padding: 2px 8px; border-radius: 20px;
+    }
+    .badge-active   { background: var(--primary-light); color: var(--primary-dark); }
+    .badge-visible  { background: var(--green-light); color: #065f46; }
+    .badge-hidden   { background: var(--red-light); color: #991b1b; }
+
+    .block-meta { font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 2px; }
+    .block-meta a { color: var(--primary); text-decoration: none; word-break: break-all; }
+    .block-meta a:hover { text-decoration: underline; }
+    .block-thumb { width: 60px; height: auto; border-radius: 4px; border: 1px solid var(--border); margin-top: 6px; }
+    .block-sub-list { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
+    .block-sub-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      background: var(--surface); border-radius: 6px; padding: 7px 8px;
+    }
+    .block-sub-thumb { width: 56px; height: auto; border-radius: 4px; flex-shrink: 0; border: 1px solid var(--border); }
+    .block-sub-text { font-size: 11px; color: var(--text-muted); display: flex; flex-direction: column; gap: 2px; }
+    .block-sub-text a { color: var(--primary); text-decoration: none; word-break: break-all; }
+    .block-sub-text a:hover { text-decoration: underline; }
+
+    /* ── Section 6: URL Issues ── */
+    .issue-groups { display: flex; flex-direction: column; gap: 10px; }
+    .issue-brand-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .issue-brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #fafbfc;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .issue-count-badge {
+      font-size: 11px; font-weight: 600;
+      padding: 2px 7px; border-radius: 20px;
+      background: #f1f5f9; color: var(--text-muted);
+    }
+    .issue-rows { display: flex; flex-direction: column; }
+    .issue-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .issue-row:last-child { border-bottom: none; }
+    .issue-type-badge {
+      flex-shrink: 0;
+      font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 20px;
+      margin-top: 1px;
+    }
+    .issue-type-badge.orange { background: #ffedd5; color: #c2410c; }
+    .issue-type-badge.yellow { background: #fef3c7; color: #92400e; }
+    .issue-detail { flex: 1; min-width: 0; }
+    .issue-block-label { font-size: 11px; color: var(--text-subtle); margin-bottom: 2px; }
+    .issue-url { font-size: 12px; color: var(--text-muted); word-break: break-all; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: 200px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 0;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary);
+      padding: 0 16px 20px;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 12px;
+      letter-spacing: 0.2px;
+    }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; }
+    .sidebar-btn {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 7px;
+      text-align: left;
+      background: none;
+      border: none;
+      border-left: 3px solid transparent;
+      border-radius: 0 6px 6px 0;
+      padding: 9px 10px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.1s, border-color 0.1s;
+      color: var(--text-muted);
+    }
+    .sidebar-btn:hover { background: var(--primary-light); color: var(--primary-dark); }
+    .sidebar-btn.active {
+      background: var(--primary-light);
+      border-left-color: var(--primary);
+      color: var(--primary-dark);
+    }
+    .sidebar-btn-num { font-size: 10px; font-weight: 600; color: var(--text-subtle); flex-shrink: 0; }
+    .sidebar-btn.active .sidebar-btn-num { color: var(--primary); }
+    .sidebar-btn-label { font-size: 12px; font-weight: 500; line-height: 1.3; }
+    .sidebar-btn.active .sidebar-btn-label { font-weight: 700; }
+
+    /* 사이드바 있을 때 콘텐츠 밀기 */
+    .page-content { margin-left: 200px; }
+
+    @media (max-width: 860px) {
+      .sidebar { display: none; }
+      .page-content { margin-left: 0; }
+    }
+
+    /* ── Empty State ── */
+    .empty {
+      text-align: center;
+      padding: 28px 0;
+      color: var(--text-subtle);
+      font-size: 13px;
+    }
+
+    /* ── Loading ── */
+    #loading {
+      position: fixed; inset: 0;
+      background: rgba(248,250,252,0.9);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999;
+      gap: 10px;
+      font-size: 14px; font-weight: 600; color: var(--primary);
+    }
+    #loading.hidden { display: none; }
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Intro Banner ── */
+    .intro-banner {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 24px 28px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .intro-banner-left { display: flex; flex-direction: column; gap: 6px; }
+    .intro-banner-title { font-size: 21px; font-weight: 800; letter-spacing: -0.4px; color: var(--text); }
+    .intro-banner-desc { font-size: 13px; color: #6b7280; line-height: 1.6; }
+    .intro-banner-right { flex-shrink: 0; text-align: right; }
+    .intro-banner-updated-label { font-size: 11px; color: var(--text-subtle); margin-bottom: 2px; }
+    .intro-banner-updated-time { font-size: 11px; color: var(--text-subtle); }
+    @media (max-width: 640px) { .intro-banner { flex-direction: column; } .intro-banner-right { text-align: left; } }
+
+    /* ── Section desc ── */
+    .section-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+
+    /* ── Section 06: 2-col grid ── */
+    .inactive-brand-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2px 0;
+    }
+    @media (max-width: 480px) { .inactive-brand-grid { grid-template-columns: 1fr; } }
+    .inactive-brand-item {
+      padding: 7px 8px;
+      border-radius: var(--radius-xs);
+      transition: background 0.1s;
+    }
+    .inactive-brand-item:hover { background: var(--primary-light); }
+  </style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  데이터 불러오는 중
+</div>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">LOUNGE MONITOR</div>
+  <div class="sidebar-nav">
+    <button class="sidebar-btn" data-target="section-1" onclick="scrollToSection('section-1')">
+      <span class="sidebar-btn-num">01</span>
+      <span class="sidebar-btn-label">컨텐츠 블럭 사용 현황</span>
+    </button>
+    <button class="sidebar-btn" data-target="section-2" onclick="scrollToSection('section-2')">
+      <span class="sidebar-btn-num">02</span>
+      <span class="sidebar-btn-label">최근 7일 내 변경된 브랜드</span>
+    </button>
+    <button class="sidebar-btn" data-target="section-3" onclick="scrollToSection('section-3')">
+      <span class="sidebar-btn-num">03</span>
+      <span class="sidebar-btn-label">URL 문제 감지</span>
+    </button>
+    <button class="sidebar-btn" data-target="section-4" onclick="scrollToSection('section-4')">
+      <span class="sidebar-btn-num">04</span>
+      <span class="sidebar-btn-label">블럭 유형별 사용 현황</span>
+    </button>
+    <button class="sidebar-btn" data-target="section-5" onclick="scrollToSection('section-5')">
+      <span class="sidebar-btn-num">05</span>
+      <span class="sidebar-btn-label">배경 컬러 현황</span>
+    </button>
+    <button class="sidebar-btn" data-target="section-8" onclick="scrollToSection('section-8')">
+      <span class="sidebar-btn-num">06</span>
+      <span class="sidebar-btn-label">컨텐츠 모듈 비활성화 브랜드</span>
+    </button>
+    <button class="sidebar-btn" data-target="section-9" onclick="scrollToSection('section-9')">
+      <span class="sidebar-btn-num">07</span>
+      <span class="sidebar-btn-label">장기 미업데이트 브랜드</span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-content">
+<main>
+  <!-- Intro Banner -->
+  <div class="intro-banner">
+    <div class="intro-banner-left">
+      <div class="intro-banner-title">라운지 컨텐츠 모니터링 대시보드</div>
+      <div class="intro-banner-desc">현재 관리 중인 고객사 80개를 기준으로 라운지 컨텐츠 블럭 현황을 모니터링합니다.<br>신규 고객사가 들어올 경우 수동으로 추가가 필요합니다.</div>
+    </div>
+    <div class="intro-banner-right">
+      <button class="btn-refresh" id="btn-refresh" onclick="loadDashboard()">새로고침</button>
+      <div class="intro-banner-updated-label" style="margin-top:10px;">마지막 데이터 조회</div>
+      <div class="intro-banner-updated-time" id="last-updated">—</div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="summary-card-label">컨텐츠 모듈 활성화 브랜드</div>
+      <div class="summary-card-value indigo" id="s-active">—</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-label">최근 7일 내 업데이트된 브랜드</div>
+      <div class="summary-card-value green" id="s-recent">—</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-label">URL 문제 감지 브랜드</div>
+      <div class="summary-card-value red" id="s-issues">—</div>
+    </div>
+  </div>
+
+  <!-- Section 1 -->
+  <div class="section" id="section-1">
+    <div class="section-header">
+      <div class="section-header-left">
+        <span class="section-num">01</span>
+        <span class="section-title">컨텐츠 블럭 사용 현황</span>
+        <div class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <div class="tooltip-box">컨텐츠 모듈을 활성화한 브랜드 목록입니다. 블럭 개수가 많은 순으로 정렬됩니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="brand-selector">
+        <div class="brand-selector-list" id="brand-list"></div>
+        <div class="brand-selector-detail" id="brand-detail"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2 -->
+  <div class="section" id="section-2">
+    <div class="section-header">
+      <div class="section-header-left">
+        <span class="section-num">02</span>
+        <span class="section-title">최근 7일 내 업데이트된 브랜드</span>
+        <div class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <div class="tooltip-box">최근 7일 이내에 라운지 설정이 변경된 브랜드 목록입니다. 변경 시각 기준 최신순으로 정렬됩니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-body" style="padding: 0;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="padding-left:20px;">브랜드</th>
+            <th>변경 일자</th>
+          </tr>
+        </thead>
+        <tbody id="recent-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section 3 -->
+  <div class="section" id="section-3">
+    <div class="section-header">
+      <div class="section-header-left">
+        <span class="section-num">03</span>
+        <span class="section-title">URL 문제 감지</span>
+        <div class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <div class="tooltip-box">다수의 블럭에 동일한 URL을 입력해놓은 브랜드들입니다. 연결할 페이지가 없어 어쩔 수 없이 같은 URL을 반복 입력하고 있는 상황으로, 이 브랜드들을 위해 URL 필수값 장벽을 낮출 필요가 있습니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="issue-groups" id="issue-list"></div>
+    </div>
+  </div>
+
+  <!-- Section 4 -->
+  <div class="section" id="section-4">
+    <div class="section-header">
+      <div class="section-header-left">
+        <span class="section-num">04</span>
+        <span class="section-title">블럭 유형별 사용 개수</span>
+        <div class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <div class="tooltip-box">전체 브랜드에서 각 블럭 유형이 몇 개의 브랜드에서 사용되고 있는지 집계한 현황입니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="chart-wrap"><canvas id="blockChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Section 5 -->
+  <div class="section" id="section-5">
+    <div class="section-header">
+      <div class="section-header-left">
+        <span class="section-num">05</span>
+        <span class="section-title">배경 컬러 현황</span>
+        <div class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <div class="tooltip-box">각 브랜드의 라운지 배경 컬러 설정 현황입니다. 기본값(#f7f7f8) 외 커스텀 컬러를 적용한 브랜드를 확인할 수 있습니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="color-card-grid" id="color-groups"></div>
+    </div>
+  </div>
+
+  <!-- Section 6 -->
+  <div class="section" id="section-8">
+    <div class="section-header">
+      <div class="section-header-left">
+        <span class="section-num">06</span>
+        <span class="section-title">컨텐츠 모듈 비활성화 브랜드</span>
+        <div class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <div class="tooltip-box">컨텐츠 모듈이 활성화되지 않은 브랜드입니다. 홈/멤버 전용 탭이 없는 상태입니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-body">
+<div class="inactive-brand-grid" id="inactive-brands-grid"></div>
+    </div>
+  </div>
+
+  <!-- Section 7 -->
+  <div class="section" id="section-9">
+    <div class="section-header">
+      <div class="section-header-left">
+        <span class="section-num">07</span>
+        <span class="section-title">장기 미업데이트 브랜드</span>
+        <div class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <div class="tooltip-box">30일 이상 라운지 설정이 변경되지 않은 브랜드입니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-body" style="padding: 0;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="padding-left:20px;">브랜드</th>
+            <th>마지막 변경 일자</th>
+          </tr>
+        </thead>
+        <tbody id="long-inactive-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+</div><!-- /.page-content -->
+
+<script>
+let blockChartInstance = null;
+
+function loungeUrl(brandIdx) {
+  return `https://app.vircle.co.kr/b/${brandIdx}`;
+}
+
+function brandLink(brandIdx, brandName) {
+  return `<a class="brand-link" href="${loungeUrl(brandIdx)}" target="_blank" rel="noopener">${brandName}</a>`;
+}
+
+function formatKST(iso, dateOnly = false) {
+  if (!iso) return '—';
+  const opts = { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' };
+  if (!dateOnly) { opts.hour = '2-digit'; opts.minute = '2-digit'; opts.hour12 = false; }
+  return new Date(iso).toLocaleString('ko-KR', opts);
+}
+
+function renderSummary(data) {
+  document.getElementById('s-active').textContent = data.activeContentModule;
+  document.getElementById('s-recent').textContent = data.recentlyUpdatedCount;
+  document.getElementById('s-issues').textContent = data.urlIssueBrandCount;
+  document.getElementById('last-updated').textContent = formatKST(data.lastUpdated);
+}
+
+
+function renderRecent(data) {
+  const tbody = document.getElementById('recent-tbody');
+  if (!data.recentlyUpdated.length) {
+    tbody.innerHTML = '<tr><td colspan="2" class="empty" style="padding:24px 20px;">최근 7일 내 변경 없음</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.recentlyUpdated.map(b => `
+    <tr>
+      <td style="padding-left:20px;">${brandLink(b.brandIdx, b.brandName)}</td>
+      <td><span class="time-kst">${formatKST(b.updatedAt, true)}</span></td>
+    </tr>
+  `).join('');
+}
+
+function renderBlockChart(data) {
+  const ctx = document.getElementById('blockChart').getContext('2d');
+  const sorted = Object.entries(data.blockStats)
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+
+  if (blockChartInstance) blockChartInstance.destroy();
+
+  blockChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(s => s.label),
+      datasets: [{
+        data: sorted.map(s => s.value),
+        backgroundColor: '#818cf8',
+        hoverBackgroundColor: '#6366f1',
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.raw}개` } }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          max: 100,
+          ticks: { precision: 0, color: '#94a3b8', font: { size: 11 } },
+          grid: { color: '#f1f5f9' },
+          border: { display: false },
+        },
+        y: {
+          ticks: { color: '#475569', font: { size: 12 } },
+          grid: { display: false },
+          border: { display: false },
+        }
+      }
+    }
+  });
+}
+
+function colorCard(hex, label, brands) {
+  const tooltipItems = brands.map(b =>
+    `<div class="color-card-tooltip-item">${b.brandName}</div>`
+  ).join('');
+  return `
+    <div class="color-card">
+      <div class="color-card-swatch" style="background:${hex};"></div>
+      <div class="color-card-info">
+        <div class="color-card-hex">${label}</div>
+        <div class="color-card-count">${brands.length}개 브랜드</div>
+      </div>
+      <div class="color-card-tooltip">${tooltipItems}</div>
+    </div>
+  `;
+}
+
+function renderColors(data) {
+  const wrap = document.getElementById('color-groups');
+  const { default: def, custom } = data.colorStats;
+  const cards = [
+    colorCard(def.color, '기본값', def.brands),
+    ...custom.map(g => colorCard(g.color, g.color, g.brands)),
+  ];
+  wrap.innerHTML = cards.join('');
+}
+
+function renderBlockProps(block) {
+  const p = block.props || {};
+  const lines = [];
+  if (p.title) lines.push(`<span>제목: ${p.title}</span>`);
+  if (p.subtitle) lines.push(`<span>부제: ${p.subtitle}</span>`);
+  if (p.text) lines.push(`<span>${p.text}</span>`);
+  if (p.link) lines.push(`<a href="${p.link}" target="_blank" rel="noopener">${p.link}</a>`);
+
+  let thumb = '';
+  if (p.mediaUrl) thumb = `<img class="block-thumb" src="${p.mediaUrl}" alt="" loading="lazy" />`;
+
+  let subList = '';
+  const items = p.items || p.channels || null;
+  if (items?.length) {
+    subList = `<div class="block-sub-list">` + items.map(item => {
+      const img = item.image || item.mediaUrl || '';
+      const imgTag = img ? `<img class="block-sub-thumb" src="${img}" alt="" loading="lazy" />` : '';
+      const title = item.title || item.text || item.label || '';
+      const sub = item.subtitle || '';
+      const link = item.link || '';
+      return `
+        <div class="block-sub-item">
+          ${imgTag}
+          <div class="block-sub-text">
+            ${title ? `<span>${title}</span>` : ''}
+            ${sub ? `<span>${sub}</span>` : ''}
+            ${link ? `<a href="${link}" target="_blank" rel="noopener">${link}</a>` : ''}
+          </div>
+        </div>`;
+    }).join('') + `</div>`;
+  }
+
+  return `
+    <div class="block-meta">${lines.join('')}</div>
+    ${thumb}${subList}
+  `;
+}
+
+let _brandDetails = [];
+let _selectedIdx = 0;
+
+function renderBrandDetail(idx) {
+  const brand = _brandDetails[idx];
+  if (!brand) return;
+
+  const detail = document.getElementById('brand-detail');
+  detail.innerHTML = `
+    <div class="brand-detail-fade">
+      <div class="brand-detail-header">
+        <span class="brand-detail-name">${brand.brandName}</span>
+        <span class="badge badge-active">총 ${brand.blocks.length}개 블럭</span>
+        <span style="flex:1;"></span>
+        <a class="btn-lounge" href="${loungeUrl(brand.brandIdx)}" target="_blank" rel="noopener">라운지 열기</a>
+      </div>
+      <div class="block-list">
+        ${brand.blocks.length
+          ? brand.blocks.map(b => `
+            <div class="block-card">
+              <div class="block-card-header">
+                <span class="block-type">${b.typeLabel}</span>
+                <span class="badge ${b.visible ? 'badge-visible' : 'badge-hidden'}">${b.visible ? '노출중' : '숨김'}</span>
+              </div>
+              ${renderBlockProps(b)}
+            </div>`).join('')
+          : '<div class="empty" style="padding:12px 0;">블럭 없음</div>'}
+      </div>
+    </div>
+  `;
+
+  // 화살표 위치 동적 이동
+  const btn = document.querySelector(`.brand-selector-btn[data-idx="${idx}"]`);
+  const arrow = document.getElementById('arrow-icon');
+  if (btn && arrow) {
+    const listEl = document.getElementById('brand-list');
+    const btnTop = btn.getBoundingClientRect().top - listEl.getBoundingClientRect().top + listEl.scrollTop;
+    const btnHeight = btn.offsetHeight;
+    arrow.style.top = (btnTop + btnHeight / 2 - 10) + 'px';
+  }
+}
+
+function selectBrand(idx) {
+  _selectedIdx = idx;
+  document.querySelectorAll('.brand-selector-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === idx);
+  });
+  renderBrandDetail(idx);
+}
+
+function renderBrandSelector(data) {
+  // 블럭 수 내림차순 정렬
+  _brandDetails = [...data.brandDetails].sort((a, b) => b.blocks.length - a.blocks.length);
+  const listEl = document.getElementById('brand-list');
+
+  if (!_brandDetails.length) {
+    listEl.innerHTML = '<div class="empty">활성화 브랜드 없음</div>';
+    return;
+  }
+
+  listEl.innerHTML = _brandDetails.map((b, i) => `
+    <button class="brand-selector-btn" data-idx="${i}" onclick="selectBrand(${i})">${b.brandName}</button>
+  `).join('');
+
+
+  selectBrand(0);
+}
+
+function renderUrlIssues(data) {
+  const list = document.getElementById('issue-list');
+  if (!data.urlIssues.length) {
+    list.innerHTML = '<div class="empty">감지된 URL 문제 없음</div>';
+    return;
+  }
+
+  // 브랜드별로 묶기
+  const grouped = new Map();
+  for (const issue of data.urlIssues) {
+    const key = issue.brandIdx;
+    if (!grouped.has(key)) grouped.set(key, { brandIdx: issue.brandIdx, brandName: issue.brandName, issues: [] });
+    grouped.get(key).issues.push(issue);
+  }
+
+  list.innerHTML = Array.from(grouped.values()).map(group => `
+    <div class="issue-brand-card">
+      <div class="issue-brand-header">
+        ${brandLink(group.brandIdx, group.brandName)}
+        <span class="issue-count-badge">${group.issues.length}건</span>
+      </div>
+      <div class="issue-rows">
+        ${group.issues.map(issue => `
+          <div class="issue-row">
+            <span class="issue-type-badge ${issue.color}">${issue.typeLabel}</span>
+            <div class="issue-detail">
+              <div class="issue-block-label">${issue.blockLabel}</div>
+              <div class="issue-url">${issue.url}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+
+function renderInactiveBrands(data) {
+  const grid = document.getElementById('inactive-brands-grid');
+  if (!data.inactiveBrands.length) {
+    grid.innerHTML = '<div class="empty">해당 없음</div>';
+    return;
+  }
+  grid.innerHTML = data.inactiveBrands.map(b => `
+    <div class="inactive-brand-item">
+      ${brandLink(b.brandIdx, b.brandName)}
+    </div>
+  `).join('');
+}
+
+function renderLongInactiveBrands(data) {
+  const tbody = document.getElementById('long-inactive-tbody');
+  if (!data.longInactiveBrands.length) {
+    tbody.innerHTML = '<tr><td colspan="2" class="empty" style="padding:24px 20px;">30일 이상 미업데이트 브랜드 없음</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.longInactiveBrands.map(b => `
+    <tr>
+      <td style="padding-left:20px;">${brandLink(b.brandIdx, b.brandName)}</td>
+      <td><span class="time-kst">${formatKST(b.updatedAt, true)}</span></td>
+    </tr>
+  `).join('');
+}
+
+async function loadDashboard() {
+  const loading = document.getElementById('loading');
+  const btn = document.getElementById('btn-refresh');
+  loading.classList.remove('hidden');
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/dashboard');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    renderSummary(data);
+    renderRecent(data);
+    renderBlockChart(data);
+    renderColors(data);
+    renderBrandSelector(data);
+    renderUrlIssues(data);
+    renderInactiveBrands(data);
+    renderLongInactiveBrands(data);
+    initSidebarObserver();
+  } catch (err) {
+    alert(`데이터 로드 실패: ${err.message}`);
+    console.error(err);
+  } finally {
+    loading.classList.add('hidden');
+    btn.disabled = false;
+  }
+}
+
+// ── Sidebar scroll & active ──
+function scrollToSection(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function initSidebarObserver() {
+  const btns = document.querySelectorAll('.sidebar-btn');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        btns.forEach(b => b.classList.remove('active'));
+        const btn = document.querySelector(`.sidebar-btn[data-target="${entry.target.id}"]`);
+        if (btn) btn.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+
+  const sectionIds = ['section-1','section-2','section-3','section-4','section-5','section-8','section-9'];
+
+  sectionIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el);
+  });
+
+  // 초기 진입 시 현재 뷰포트에 보이는 섹션 즉시 활성화
+  for (const id of sectionIds) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      btns.forEach(b => b.classList.remove('active'));
+      const btn = document.querySelector(`.sidebar-btn[data-target="${id}"]`);
+      if (btn) btn.classList.add('active');
+      break;
+    }
+  }
+}
+
+loadDashboard();
+</script>
+</body>
+</html>
