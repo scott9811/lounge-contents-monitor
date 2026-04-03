@@ -249,6 +249,38 @@
     /* ── Section 3: Chart ── */
     .chart-wrap { height: 300px; position: relative; }
 
+    /* ── Chart custom tooltip ── */
+    #chart-tooltip {
+      display: none;
+      position: fixed;
+      background: #1f2937;
+      border-radius: 8px;
+      padding: 11px 16px;
+      pointer-events: none;
+      z-index: 500;
+      max-width: 420px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .chart-tooltip-header {
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      white-space: nowrap;
+    }
+    .chart-tooltip-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 3px 10px;
+    }
+    .chart-tooltip-brand {
+      color: #e2e8f0;
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     /* ── Section 4: Colors ── */
     .color-card-grid {
       display: grid;
@@ -576,6 +608,11 @@
 </head>
 <body>
 
+<div id="chart-tooltip">
+  <div class="chart-tooltip-header" id="chart-tooltip-header"></div>
+  <div class="chart-tooltip-grid" id="chart-tooltip-grid"></div>
+</div>
+
 <div id="loading">
   <div class="spinner"></div>
   데이터 불러오는 중
@@ -594,7 +631,7 @@
     </button>
     <button class="sidebar-btn" data-target="section-3" onclick="scrollToSection('section-3')">
       <span class="sidebar-btn-num">03</span>
-      <span class="sidebar-btn-label">URL 문제 감지</span>
+      <span class="sidebar-btn-label">동일 URL 중복</span>
     </button>
     <button class="sidebar-btn" data-target="section-4" onclick="scrollToSection('section-4')">
       <span class="sidebar-btn-num">04</span>
@@ -621,7 +658,7 @@
   <div class="intro-banner">
     <div class="intro-banner-left">
       <div class="intro-banner-title">라운지 컨텐츠 모니터링 대시보드</div>
-      <div class="intro-banner-desc">현재 관리 중인 고객사 80개를 기준으로 라운지 컨텐츠 블럭 현황을 모니터링합니다.<br>신규 고객사가 들어올 경우 수동으로 추가가 필요합니다.</div>
+      <div class="intro-banner-desc">현재 관리 중인 고객사 80개만 필터링하여 라운지 컨텐츠 블럭 현황을 모니터링합니다.<br>신규 고객사가 들어올 경우 수동으로 수정이 필요합니다.</div>
     </div>
     <div class="intro-banner-right">
       <button class="btn-refresh" id="btn-refresh" onclick="loadDashboard()">새로고침</button>
@@ -696,7 +733,7 @@
     <div class="section-header">
       <div class="section-header-left">
         <span class="section-num">03</span>
-        <span class="section-title">URL 문제 감지</span>
+        <span class="section-title">동일 URL 중복</span>
         <div class="tooltip-wrap">
           <span class="tooltip-icon">?</span>
           <div class="tooltip-box">다수의 블럭에 동일한 URL을 입력해놓은 브랜드들입니다. 연결할 페이지가 없어 어쩔 수 없이 같은 URL을 반복 입력하고 있는 상황으로, 이 브랜드들을 위해 URL 필수값 장벽을 낮출 필요가 있습니다.</div>
@@ -788,6 +825,7 @@
 
 <script>
 let blockChartInstance = null;
+let _blockBrandMap = {};
 
 function loungeUrl(brandIdx) {
   return `https://app.vircle.co.kr/b/${brandIdx}`;
@@ -827,12 +865,16 @@ function renderRecent(data) {
 }
 
 function renderBlockChart(data) {
+  _blockBrandMap = data.blockBrandMap || {};
+
   const ctx = document.getElementById('blockChart').getContext('2d');
   const sorted = Object.entries(data.blockStats)
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
 
   if (blockChartInstance) blockChartInstance.destroy();
+
+  const tooltipEl = document.getElementById('chart-tooltip');
 
   blockChartInstance = new Chart(ctx, {
     type: 'bar',
@@ -852,7 +894,39 @@ function renderBlockChart(data) {
       maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: c => ` ${c.raw}개` } }
+        tooltip: {
+          enabled: false,
+          external(context) {
+            const tooltip = context.tooltip;
+            if (tooltip.opacity === 0) {
+              tooltipEl.style.display = 'none';
+              return;
+            }
+
+            const label = tooltip.dataPoints[0].label;
+            const brands = _blockBrandMap[label] || [];
+
+            document.getElementById('chart-tooltip-header').textContent =
+              `${label} · ${brands.length}개 브랜드`;
+            document.getElementById('chart-tooltip-grid').innerHTML =
+              brands.map(b => `<span class="chart-tooltip-brand">${b.brandName}</span>`).join('');
+
+            // 위치 계산 (화면 밖 넘침 방지)
+            const canvasRect = context.chart.canvas.getBoundingClientRect();
+            let x = canvasRect.left + tooltip.caretX + 12;
+            let y = canvasRect.top + tooltip.caretY - 16;
+
+            tooltipEl.style.display = 'block';
+            const tipW = tooltipEl.offsetWidth;
+            const tipH = tooltipEl.offsetHeight;
+            if (x + tipW > window.innerWidth - 8) x = canvasRect.left + tooltip.caretX - tipW - 12;
+            if (y + tipH > window.innerHeight - 8) y = window.innerHeight - tipH - 8;
+            if (y < 8) y = 8;
+
+            tooltipEl.style.left = x + 'px';
+            tooltipEl.style.top = y + 'px';
+          }
+        }
       },
       scales: {
         x: {
@@ -869,6 +943,11 @@ function renderBlockChart(data) {
         }
       }
     }
+  });
+
+  // 차트 영역 밖으로 마우스 이동 시 툴팁 숨김
+  ctx.canvas.addEventListener('mouseleave', () => {
+    tooltipEl.style.display = 'none';
   });
 }
 

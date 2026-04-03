@@ -261,14 +261,21 @@ async function fetchDashboardData() {
     }))
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
-  // 블럭 유형별 총 사용 개수 (전체 브랜드 합산)
+  // 블럭 유형별 총 사용 개수 + 브랜드별 목록
   const blockStats = {};
+  const blockBrandMap = {}; // label -> [{brandIdx, brandName}]
   for (const row of rows) {
     const blocks = row.tree?.blocks || {};
+    const seenLabels = new Set();
     for (const [, block] of Object.entries(blocks)) {
       if (block.type && BLOCK_LABELS[block.type]) {
         const label = BLOCK_LABELS[block.type];
         blockStats[label] = (blockStats[label] || 0) + 1;
+        if (!seenLabels.has(label)) {
+          seenLabels.add(label);
+          if (!blockBrandMap[label]) blockBrandMap[label] = [];
+          blockBrandMap[label].push({ brandIdx: Number(row.brand_idx), brandName: getBrandName(row.brand_idx) });
+        }
       }
     }
   }
@@ -369,6 +376,7 @@ async function fetchDashboardData() {
     inactiveBrands,
     recentlyUpdated,
     blockStats,
+    blockBrandMap,
     colorStats,
     brandDetails,
     urlIssues,
