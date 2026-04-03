@@ -19,6 +19,10 @@ app.get('/api/dashboard', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
+  res.redirect('/dashboard');
+});
+
+app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
