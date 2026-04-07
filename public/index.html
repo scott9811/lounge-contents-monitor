@@ -906,8 +906,9 @@ function renderBlockChart(data) {
             const label = tooltip.dataPoints[0].label;
             const brands = _blockBrandMap[label] || [];
 
+            const count = tooltip.dataPoints[0].raw;
             document.getElementById('chart-tooltip-header').textContent =
-              `${label} · ${brands.length}개 브랜드`;
+              `${label} · ${count}개`;
             document.getElementById('chart-tooltip-grid').innerHTML =
               brands.map(b => `<span class="chart-tooltip-brand">${b.brandName}</span>`).join('');
 
