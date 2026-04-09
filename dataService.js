@@ -225,6 +225,7 @@ async function fetchDashboardData() {
 
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+  const twentyEightDaysAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
 
   // 브랜드별 최신 레코드만 유지 (brand_idx 기준)
   const brandMap = new Map();
@@ -261,6 +262,13 @@ async function fetchDashboardData() {
       updatedAt: r.updated_at,
     }))
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+  // 이전 14일(14~28일 전) 업데이트 브랜드 수 — 전주 대비 증감용
+  const prevPeriodUpdatedCount = rows.filter((r) => {
+    const d = new Date(r.updated_at);
+    return d >= twentyEightDaysAgo && d < sevenDaysAgo;
+  }).length;
+  const recentlyUpdatedDelta = recentlyUpdated.length - prevPeriodUpdatedCount;
 
   // 블럭 유형별 총 사용 개수 + 브랜드별 목록
   const blockStats = {};
@@ -372,6 +380,7 @@ async function fetchDashboardData() {
     totalBrands,
     activeContentModule: activeBrands.length,
     recentlyUpdatedCount: recentlyUpdated.length,
+    recentlyUpdatedDelta,
     urlIssueBrandCount,
     activeBrands,
     inactiveBrands,

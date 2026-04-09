@@ -91,6 +91,14 @@
     .summary-card-value.green  { color: var(--green); }
     .summary-card-value.red    { color: var(--red); }
 
+    .summary-card-delta {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-subtle);
+    }
+    .summary-card-delta.up   { color: var(--green); }
+    .summary-card-delta.down { color: var(--red); }
+
     /* ── Section ── */
     .section {
       background: var(--surface);
@@ -676,6 +684,7 @@
     <div class="summary-card">
       <div class="summary-card-label">최근 14일 내 업데이트된 브랜드</div>
       <div class="summary-card-value green" id="s-recent">—</div>
+      <div class="summary-card-delta" id="s-recent-delta"></div>
     </div>
     <div class="summary-card">
       <div class="summary-card-label">동일 URL 중복</div>
@@ -847,6 +856,19 @@ function renderSummary(data) {
   document.getElementById('s-recent').textContent = data.recentlyUpdatedCount;
   document.getElementById('s-issues').textContent = data.urlIssueBrandCount;
   document.getElementById('last-updated').textContent = formatKST(data.lastUpdated);
+
+  const delta = data.recentlyUpdatedDelta;
+  const deltaEl = document.getElementById('s-recent-delta');
+  if (delta === 0) {
+    deltaEl.textContent = '전주 대비 변동 없음';
+    deltaEl.className = 'summary-card-delta';
+  } else if (delta > 0) {
+    deltaEl.textContent = `전주 대비 +${delta}`;
+    deltaEl.className = 'summary-card-delta up';
+  } else {
+    deltaEl.textContent = `전주 대비 ${delta}`;
+    deltaEl.className = 'summary-card-delta down';
+  }
 }
 
 
