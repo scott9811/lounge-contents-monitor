@@ -224,7 +224,7 @@ async function fetchDashboardData() {
   const data = await fetchAllRows();
 
   const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const sevenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
   // 브랜드별 최신 레코드만 유지 (brand_idx 기준)
   const brandMap = new Map();
@@ -252,7 +252,7 @@ async function fetchDashboardData() {
     else inactiveBrands.push(entry);
   }
 
-  // 최근 7일 내 변경
+  // 최근 14일 내 변경
   const recentlyUpdated = rows
     .filter((r) => new Date(r.updated_at) >= sevenDaysAgo)
     .map((r) => ({

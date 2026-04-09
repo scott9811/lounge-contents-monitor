@@ -594,7 +594,7 @@
     /* ── Section 06: 2-col grid ── */
     .inactive-brand-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 2px 0;
     }
     @media (max-width: 480px) { .inactive-brand-grid { grid-template-columns: 1fr; } }
@@ -627,7 +627,7 @@
     </button>
     <button class="sidebar-btn" data-target="section-2" onclick="scrollToSection('section-2')">
       <span class="sidebar-btn-num">02</span>
-      <span class="sidebar-btn-label">최근 7일 내 변경된 브랜드</span>
+      <span class="sidebar-btn-label">최근 14일 내 변경된 브랜드</span>
     </button>
     <button class="sidebar-btn" data-target="section-3" onclick="scrollToSection('section-3')">
       <span class="sidebar-btn-num">03</span>
@@ -674,7 +674,7 @@
       <div class="summary-card-value indigo" id="s-active">—</div>
     </div>
     <div class="summary-card">
-      <div class="summary-card-label">최근 7일 내 업데이트된 브랜드</div>
+      <div class="summary-card-label">최근 14일 내 업데이트된 브랜드</div>
       <div class="summary-card-value green" id="s-recent">—</div>
     </div>
     <div class="summary-card">
@@ -708,10 +708,10 @@
     <div class="section-header">
       <div class="section-header-left">
         <span class="section-num">02</span>
-        <span class="section-title">최근 7일 내 업데이트된 브랜드</span>
+        <span class="section-title">최근 14일 내 업데이트된 브랜드</span>
         <div class="tooltip-wrap">
           <span class="tooltip-icon">?</span>
-          <div class="tooltip-box">최근 7일 이내에 라운지 설정이 변경된 브랜드 목록입니다. 변경 시각 기준 최신순으로 정렬됩니다.</div>
+          <div class="tooltip-box">최근 14일 이내에 라운지 설정이 변경된 브랜드 목록입니다. 변경 시각 기준 최신순으로 정렬됩니다.</div>
         </div>
       </div>
     </div>
@@ -853,7 +853,7 @@ function renderSummary(data) {
 function renderRecent(data) {
   const tbody = document.getElementById('recent-tbody');
   if (!data.recentlyUpdated.length) {
-    tbody.innerHTML = '<tr><td colspan="2" class="empty" style="padding:24px 20px;">최근 7일 내 변경 없음</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="2" class="empty" style="padding:24px 20px;">최근 14일 내 변경 없음</td></tr>';
     return;
   }
   tbody.innerHTML = data.recentlyUpdated.map(b => `
