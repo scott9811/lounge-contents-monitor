@@ -317,6 +317,15 @@ async function fetchDashboardData() {
     .filter((row) => isContentModuleActive(row.tree))
     .map((row) => {
       const blocks = getBlocksForBrand(row.tree);
+      const mappedBlocks = blocks.map((b) => ({
+        key: b.key,
+        type: b.type,
+        typeLabel: BLOCK_LABELS[b.type] || b.type,
+        visible: b.visible !== false,
+        props: b.props || {},
+      }));
+      const visibleCount = mappedBlocks.filter((b) => b.visible).length;
+      const hiddenCount = mappedBlocks.filter((b) => !b.visible).length;
       return {
         brandIdx: Number(row.brand_idx),
         brandName: getBrandName(row.brand_idx),
@@ -324,13 +333,9 @@ async function fetchDashboardData() {
         updatedAt: row.updated_at,
         createdAt: row.created_at,
         backgroundColor: row.tree?.backgroundColor || null,
-        blocks: blocks.map((b) => ({
-          key: b.key,
-          type: b.type,
-          typeLabel: BLOCK_LABELS[b.type] || b.type,
-          visible: b.visible !== false,
-          props: b.props || {},
-        })),
+        blocks: mappedBlocks,
+        visibleCount,
+        hiddenCount,
       };
     });
 

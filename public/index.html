@@ -1051,6 +1051,8 @@ function renderBrandDetail(idx) {
       <div class="brand-detail-header">
         <span class="brand-detail-name">${brand.brandName}</span>
         <span class="badge badge-active">총 ${brand.blocks.length}개 블럭</span>
+        <span class="badge badge-visible">${brand.visibleCount}개 노출중</span>
+        ${brand.hiddenCount > 0 ? `<span class="badge badge-hidden">${brand.hiddenCount}개 숨김</span>` : ''}
         <span style="flex:1;"></span>
         <a class="btn-lounge" href="${loungeUrl(brand.brandIdx)}" target="_blank" rel="noopener">라운지 열기</a>
       </div>
@@ -1090,7 +1092,7 @@ function selectBrand(idx) {
 
 function renderBrandSelector(data) {
   // 블럭 수 내림차순 정렬
-  _brandDetails = [...data.brandDetails].sort((a, b) => b.blocks.length - a.blocks.length);
+  _brandDetails = [...data.brandDetails].sort((a, b) => b.visibleCount - a.visibleCount);
   const listEl = document.getElementById('brand-list');
 
   if (!_brandDetails.length) {
