@@ -392,6 +392,17 @@ async function fetchDashboardData() {
     }))
     .sort((a, b) => new Date(a.updatedAt) - new Date(b.updatedAt));
 
+  // TOP 3: 노출 중인 블럭 개수 기준 상위 3개 브랜드
+  const topBrands = [...brandDetails]
+    .sort((a, b) => b.visibleCount - a.visibleCount)
+    .slice(0, 3)
+    .map((b) => ({
+      brandIdx: b.brandIdx,
+      brandName: b.brandName,
+      visibleCount: b.visibleCount,
+      totalCount: b.blocks.length,
+    }));
+
   return {
     lastUpdated: now.toISOString(),
     totalBrands,
@@ -410,6 +421,7 @@ async function fetchDashboardData() {
     allHiddenBrands,
     noBlockBrands,
     longInactiveBrands,
+    topBrands,
   };
 }
 

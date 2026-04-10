@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>라운지 컨텐츠 모니터링</title>
+  <title>라운지 콘텐츠 모니터링</title>
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -79,29 +79,44 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px;
+      padding: 24px 20px;
       box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: box-shadow 0.15s, transform 0.12s, border-color 0.15s;
     }
-    .summary-card-label { font-size: 16px; font-weight: 600; color: var(--text-muted); }
-    .summary-card-value { font-size: 36px; font-weight: 700; letter-spacing: -1.5px; }
-    .summary-card-value.indigo { color: var(--primary); }
-    .summary-card-value.green  { color: var(--green); }
-    .summary-card-value.red    { color: var(--red); }
+    .summary-card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
+      border-color: #c7d2fe;
+    }
+    .summary-card-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+    }
+    .summary-card.card-blue .summary-card-bar { background: linear-gradient(90deg, var(--primary), #818cf8); }
+    .summary-card.card-red  .summary-card-bar { background: linear-gradient(90deg, var(--red), #f87171); }
+    .summary-card-label { font-size: 16px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.1px; }
+    .summary-card-value { font-size: 36px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; margin-top: 4px; }
+    .summary-card-value.blue { color: var(--primary); }
+    .summary-card-value.red  { color: var(--red); }
 
     .summary-card-value-row {
       display: flex;
       align-items: baseline;
-      gap: 8px;
+      gap: 10px;
     }
     .summary-card-delta {
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--text-subtle);
     }
-    .summary-card-delta.up   { color: var(--green); }
+    .summary-card-delta.up   { color: var(--primary); }
     .summary-card-delta.down { color: var(--red); }
 
     /* ── Section ── */
@@ -604,7 +619,85 @@
       line-height: 1.6;
     }
 
-    /* ── Section 06: 2-col grid ── */
+    /* ── TOP 3 ── */
+    .top3-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .top3-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      transition: box-shadow 0.15s, transform 0.12s, border-color 0.15s;
+    }
+    .top3-card:hover {
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+      transform: translateX(3px);
+      border-color: #c7d2fe;
+    }
+    .top3-card-accent { display: none; }
+    .top3-rank {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      min-width: 30px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .top3-card.rank-1 .top3-rank { color: #f59e0b; }
+    .top3-card.rank-2 .top3-rank { color: #94a3b8; }
+    .top3-card.rank-3 .top3-rank { color: #c2855b; }
+    .top3-card-info {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+    .top3-brand-name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .top3-count {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .top3-arrow {
+      font-size: 16px;
+      color: var(--primary);
+      opacity: 0;
+      flex-shrink: 0;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .top3-card:hover .top3-arrow { opacity: 1; transform: translateX(4px); }
+
+    /* ── 숨김 브랜드 리스트 ── */
+    .hidden-brand-list { display: flex; flex-direction: column; }
+    .hidden-brand-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .hidden-brand-row:last-child { border-bottom: none; }
+
+    /* ── Section 07: 2-col grid ── */
     .inactive-brand-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -634,9 +727,13 @@
 <nav class="sidebar">
   <div class="sidebar-logo">LOUNGE MONITOR</div>
   <div class="sidebar-nav">
+    <button class="sidebar-btn" data-target="section-top3" onclick="scrollToSection('section-top3')">
+      <span class="sidebar-btn-num">★</span>
+      <span class="sidebar-btn-label">다채로운 라운지 TOP 3</span>
+    </button>
     <button class="sidebar-btn" data-target="section-1" onclick="scrollToSection('section-1')">
       <span class="sidebar-btn-num">01</span>
-      <span class="sidebar-btn-label">컨텐츠 블럭 사용 현황</span>
+      <span class="sidebar-btn-label">콘텐츠 블럭 사용 현황</span>
     </button>
     <button class="sidebar-btn" data-target="section-2" onclick="scrollToSection('section-2')">
       <span class="sidebar-btn-num">02</span>
@@ -654,12 +751,16 @@
       <span class="sidebar-btn-num">05</span>
       <span class="sidebar-btn-label">배경 컬러 현황</span>
     </button>
-    <button class="sidebar-btn" data-target="section-8" onclick="scrollToSection('section-8')">
+    <button class="sidebar-btn" data-target="section-6" onclick="scrollToSection('section-6')">
       <span class="sidebar-btn-num">06</span>
-      <span class="sidebar-btn-label">컨텐츠 모듈 비활성화 브랜드</span>
+      <span class="sidebar-btn-label">숨김 처리만 해둔 브랜드</span>
+    </button>
+    <button class="sidebar-btn" data-target="section-8" onclick="scrollToSection('section-8')">
+      <span class="sidebar-btn-num">07</span>
+      <span class="sidebar-btn-label">콘텐츠 모듈 비활성화 브랜드</span>
     </button>
     <button class="sidebar-btn" data-target="section-9" onclick="scrollToSection('section-9')">
-      <span class="sidebar-btn-num">07</span>
+      <span class="sidebar-btn-num">08</span>
       <span class="sidebar-btn-label">장기 미업데이트 브랜드</span>
     </button>
   </div>
@@ -670,7 +771,7 @@
   <!-- Intro Banner -->
   <div class="intro-banner">
     <div class="intro-banner-left">
-      <div class="intro-banner-title">라운지 컨텐츠 모니터링 대시보드</div>
+      <div class="intro-banner-title">라운지 콘텐츠 모니터링 대시보드</div>
       <div class="intro-banner-desc">현재 관리 중인 고객사 81개의 라운지 콘텐츠 블럭 현황을 모니터링합니다.<br>고객사가 어떤 방식으로 활용하고 있는지를 파악해 기능의 고도화 및 개선 의사결정에 참고합니다.</div>
     </div>
     <div class="intro-banner-right">
@@ -682,20 +783,40 @@
 
   <!-- Summary -->
   <div class="summary-cards">
-    <div class="summary-card">
-      <div class="summary-card-label">컨텐츠 모듈 활성 브랜드</div>
-      <div class="summary-card-value indigo" id="s-active">—</div>
+    <div class="summary-card card-blue" onclick="scrollToSection('section-1')">
+      <div class="summary-card-bar"></div>
+      <div class="summary-card-label">콘텐츠 모듈 활성 브랜드</div>
+      <div class="summary-card-value blue" id="s-active">—</div>
     </div>
-    <div class="summary-card">
+    <div class="summary-card card-blue" onclick="scrollToSection('section-2')">
+      <div class="summary-card-bar"></div>
       <div class="summary-card-label">최근 14일 내 업데이트된 브랜드</div>
       <div class="summary-card-value-row">
-        <div class="summary-card-value green" id="s-recent">—</div>
+        <div class="summary-card-value blue" id="s-recent">—</div>
         <div class="summary-card-delta" id="s-recent-delta"></div>
       </div>
     </div>
-    <div class="summary-card">
+    <div class="summary-card card-red" onclick="scrollToSection('section-3')">
+      <div class="summary-card-bar"></div>
       <div class="summary-card-label">동일 URL 중복</div>
       <div class="summary-card-value red" id="s-issues">—</div>
+    </div>
+  </div>
+
+  <!-- TOP 3 -->
+  <div class="section" id="section-top3">
+    <div class="section-header">
+      <div class="section-header-left">
+        <span class="section-num" style="letter-spacing:0.5px;">TOP</span>
+        <span class="section-title">가장 다채로운 라운지 TOP 3</span>
+        <div class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <div class="tooltip-box">노출 중인 콘텐츠 블럭 개수가 가장 많은 브랜드 TOP 3입니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="top3-grid" id="top3-list"></div>
     </div>
   </div>
 
@@ -704,10 +825,10 @@
     <div class="section-header">
       <div class="section-header-left">
         <span class="section-num">01</span>
-        <span class="section-title">컨텐츠 블럭 사용 현황</span>
+        <span class="section-title">콘텐츠 블럭 사용 현황</span>
         <div class="tooltip-wrap">
           <span class="tooltip-icon">?</span>
-          <div class="tooltip-box">컨텐츠 모듈을 활성화한 브랜드 목록입니다. 블럭 개수가 많은 순으로 정렬됩니다.</div>
+          <div class="tooltip-box">콘텐츠 모듈을 활성화한 브랜드 목록입니다. 블럭 개수가 많은 순으로 정렬됩니다.</div>
         </div>
       </div>
     </div>
@@ -795,15 +916,32 @@
     </div>
   </div>
 
-  <!-- Section 6 -->
-  <div class="section" id="section-8">
+  <!-- Section 6: 숨김 처리만 해둔 브랜드 -->
+  <div class="section" id="section-6">
     <div class="section-header">
       <div class="section-header-left">
         <span class="section-num">06</span>
-        <span class="section-title">컨텐츠 모듈 비활성화 브랜드</span>
+        <span class="section-title">숨김 처리만 해둔 브랜드</span>
         <div class="tooltip-wrap">
           <span class="tooltip-icon">?</span>
-          <div class="tooltip-box">컨텐츠 모듈이 활성화되지 않은 브랜드입니다. 홈/멤버 전용 탭이 없는 상태입니다.</div>
+          <div class="tooltip-box">블럭은 세팅되어 있으나 전체 숨김 처리된 브랜드입니다. 라운지에 아무것도 노출되지 않고 있습니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="hidden-brand-list" id="all-hidden-list"></div>
+    </div>
+  </div>
+
+  <!-- Section 6 (비활성화) -->
+  <div class="section" id="section-8">
+    <div class="section-header">
+      <div class="section-header-left">
+        <span class="section-num">07</span>
+        <span class="section-title">콘텐츠 모듈 비활성화 브랜드</span>
+        <div class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <div class="tooltip-box">콘텐츠 모듈이 활성화되지 않은 브랜드입니다. 홈/멤버 전용 탭이 없는 상태입니다.</div>
         </div>
       </div>
     </div>
@@ -812,11 +950,11 @@
     </div>
   </div>
 
-  <!-- Section 7 -->
+  <!-- Section 8 -->
   <div class="section" id="section-9">
     <div class="section-header">
       <div class="section-header-left">
-        <span class="section-num">07</span>
+        <span class="section-num">08</span>
         <span class="section-title">장기 미업데이트 브랜드</span>
         <div class="tooltip-wrap">
           <span class="tooltip-icon">?</span>
@@ -1164,6 +1302,41 @@ function renderInactiveBrands(data) {
   `).join('');
 }
 
+function renderTop3(data) {
+  const list = document.getElementById('top3-list');
+  if (!data.topBrands || !data.topBrands.length) {
+    list.innerHTML = '<div class="empty">데이터 없음</div>';
+    return;
+  }
+  const rankLabels = ['1ST', '2ND', '3RD'];
+  list.innerHTML = data.topBrands.map((b, i) => `
+    <a class="top3-card rank-${i + 1}" href="${loungeUrl(b.brandIdx)}" target="_blank" rel="noopener">
+      <div class="top3-rank">${rankLabels[i]}</div>
+      <div class="top3-card-info">
+        <div class="top3-brand-name">${b.brandName}</div>
+        <div class="top3-count">${b.visibleCount}개 블럭 노출 중</div>
+      </div>
+      <div class="top3-arrow">→</div>
+    </a>
+  `).join('');
+}
+
+function renderAllHiddenBrands(data) {
+  const list = document.getElementById('all-hidden-list');
+  if (!data.allHiddenBrands || !data.allHiddenBrands.length) {
+    list.innerHTML = '<div class="empty">해당 브랜드 없음</div>';
+    return;
+  }
+  list.innerHTML = data.allHiddenBrands.map(b => `
+    <div class="hidden-brand-row">
+      ${brandLink(b.brandIdx, b.brandName)}
+      <span class="badge badge-hidden">${b.blockCount}개 블럭 (전체 숨김)</span>
+      <span style="flex:1;"></span>
+      <span class="time-kst">${formatKST(b.updatedAt, true)}</span>
+    </div>
+  `).join('');
+}
+
 function renderLongInactiveBrands(data) {
   const tbody = document.getElementById('long-inactive-tbody');
   if (!data.longInactiveBrands.length) {
@@ -1190,6 +1363,8 @@ async function loadDashboard() {
     const data = await res.json();
 
     renderSummary(data);
+    renderTop3(data);
+    renderAllHiddenBrands(data);
     renderRecent(data);
     renderBlockChart(data);
     renderColors(data);
@@ -1225,7 +1400,7 @@ function initSidebarObserver() {
     });
   }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
 
-  const sectionIds = ['section-1','section-2','section-3','section-4','section-5','section-8','section-9'];
+  const sectionIds = ['section-top3','section-1','section-2','section-3','section-4','section-5','section-6','section-8','section-9'];
 
   sectionIds.forEach(id => {
     const el = document.getElementById(id);
