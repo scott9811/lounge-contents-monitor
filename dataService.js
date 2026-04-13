@@ -109,6 +109,7 @@ const BLOCK_LABELS = {
   'button-type-banner': '버튼형 배너',
   'service-channel-list': 'SNS 링크',
   'contents-youtube': '유튜브 임베드',
+  'contents-instagram': '인스타그램',
 };
 
 
