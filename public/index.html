@@ -1108,6 +1108,7 @@ function renderBlockChart(data) {
           ticks: { color: '#475569', font: { size: 12 } },
           grid: { display: false },
           border: { display: false },
+          afterFit(scale) { scale.width = 140; },
         }
       }
     }
