@@ -433,8 +433,12 @@ async function fetchDashboardData() {
   const topKeywords = Object.entries(kwBrandMap)
     .filter(([, s]) => s.size >= 2)
     .sort((a, b) => b[1].size - a[1].size)
-    .slice(0, 5)
-    .map(([keyword, s]) => ({ keyword, brandCount: s.size }));
+    .slice(0, 10)
+    .map(([keyword, s]) => ({
+      keyword,
+      brandCount: s.size,
+      brands: Array.from(s).map((idx) => ({ brandIdx: idx, brandName: getBrandName(idx) })),
+    }));
 
   // TOP 3: 노출 중인 블럭 개수 기준 상위 3개 브랜드
   const topBrands = [...brandDetails]
