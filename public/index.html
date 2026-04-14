@@ -686,6 +686,38 @@
     }
     .top3-card:hover .top3-arrow { opacity: 1; transform: translateX(4px); }
 
+    /* ── 키워드 랭킹 ── */
+    .keyword-rank-list { display: flex; flex-direction: column; gap: 8px; }
+    .keyword-rank-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light);
+    }
+    .keyword-rank-num {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      min-width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .keyword-rank-item:nth-child(1) .keyword-rank-num { color: #f59e0b; }
+    .keyword-rank-item:nth-child(2) .keyword-rank-num { color: #94a3b8; }
+    .keyword-rank-item:nth-child(3) .keyword-rank-num { color: #c2855b; }
+    .keyword-rank-item:nth-child(n+4) .keyword-rank-num { color: var(--text-subtle); }
+    .keyword-text {
+      font-size: 16px;
+      font-weight: 700;
+      flex: 1;
+      color: var(--text);
+    }
+    .keyword-rank-item:nth-child(1) .keyword-text { font-size: 20px; }
+    .keyword-brand-count { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+
     /* ── 숨김 브랜드 리스트 ── */
     .hidden-brand-list { display: flex; flex-direction: column; }
     .hidden-brand-row {
@@ -745,22 +777,26 @@
     </button>
     <button class="sidebar-btn" data-target="section-4" onclick="scrollToSection('section-4')">
       <span class="sidebar-btn-num">04</span>
-      <span class="sidebar-btn-label">블럭 유형별 사용 현황</span>
+      <span class="sidebar-btn-label">블럭 유형별 사용 개수</span>
+    </button>
+    <button class="sidebar-btn" data-target="section-keyword" onclick="scrollToSection('section-keyword')">
+      <span class="sidebar-btn-num">05</span>
+      <span class="sidebar-btn-label">블럭 키워드 현황</span>
     </button>
     <button class="sidebar-btn" data-target="section-5" onclick="scrollToSection('section-5')">
-      <span class="sidebar-btn-num">05</span>
+      <span class="sidebar-btn-num">06</span>
       <span class="sidebar-btn-label">배경 컬러 현황</span>
     </button>
     <button class="sidebar-btn" data-target="section-6" onclick="scrollToSection('section-6')">
-      <span class="sidebar-btn-num">06</span>
+      <span class="sidebar-btn-num">07</span>
       <span class="sidebar-btn-label">숨김 처리만 해둔 브랜드</span>
     </button>
     <button class="sidebar-btn" data-target="section-8" onclick="scrollToSection('section-8')">
-      <span class="sidebar-btn-num">07</span>
+      <span class="sidebar-btn-num">08</span>
       <span class="sidebar-btn-label">콘텐츠 모듈 비활성화 브랜드</span>
     </button>
     <button class="sidebar-btn" data-target="section-9" onclick="scrollToSection('section-9')">
-      <span class="sidebar-btn-num">08</span>
+      <span class="sidebar-btn-num">09</span>
       <span class="sidebar-btn-label">장기 미업데이트 브랜드</span>
     </button>
   </div>
@@ -899,11 +935,28 @@
     </div>
   </div>
 
-  <!-- Section 5 -->
-  <div class="section" id="section-5">
+  <!-- Section 5: 키워드 모음 -->
+  <div class="section" id="section-keyword">
     <div class="section-header">
       <div class="section-header-left">
         <span class="section-num">05</span>
+        <span class="section-title">블럭 키워드 현황</span>
+        <div class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <div class="tooltip-box">전체 브랜드의 콘텐츠 블럭 제목·부제에서 2개 이상 브랜드가 공통으로 사용한 키워드 TOP 5입니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="keyword-rank-list" id="keyword-rank-list"></div>
+    </div>
+  </div>
+
+  <!-- Section 6 -->
+  <div class="section" id="section-5">
+    <div class="section-header">
+      <div class="section-header-left">
+        <span class="section-num">06</span>
         <span class="section-title">배경 컬러 현황</span>
         <div class="tooltip-wrap">
           <span class="tooltip-icon">?</span>
@@ -916,11 +969,11 @@
     </div>
   </div>
 
-  <!-- Section 6: 숨김 처리만 해둔 브랜드 -->
+  <!-- Section 7: 숨김 처리만 해둔 브랜드 -->
   <div class="section" id="section-6">
     <div class="section-header">
       <div class="section-header-left">
-        <span class="section-num">06</span>
+        <span class="section-num">07</span>
         <span class="section-title">숨김 처리만 해둔 브랜드</span>
         <div class="tooltip-wrap">
           <span class="tooltip-icon">?</span>
@@ -933,11 +986,11 @@
     </div>
   </div>
 
-  <!-- Section 6 (비활성화) -->
+  <!-- Section 8: 비활성화 -->
   <div class="section" id="section-8">
     <div class="section-header">
       <div class="section-header-left">
-        <span class="section-num">07</span>
+        <span class="section-num">08</span>
         <span class="section-title">콘텐츠 모듈 비활성화 브랜드</span>
         <div class="tooltip-wrap">
           <span class="tooltip-icon">?</span>
@@ -950,11 +1003,11 @@
     </div>
   </div>
 
-  <!-- Section 8 -->
+  <!-- Section 9 -->
   <div class="section" id="section-9">
     <div class="section-header">
       <div class="section-header-left">
-        <span class="section-num">08</span>
+        <span class="section-num">09</span>
         <span class="section-title">장기 미업데이트 브랜드</span>
         <div class="tooltip-wrap">
           <span class="tooltip-icon">?</span>
@@ -1323,6 +1376,22 @@ function renderTop3(data) {
   `).join('');
 }
 
+function renderKeywords(data) {
+  const list = document.getElementById('keyword-rank-list');
+  if (!data.topKeywords || !data.topKeywords.length) {
+    list.innerHTML = '<div class="empty">공통 키워드 없음</div>';
+    return;
+  }
+  const rankLabels = ['1위', '2위', '3위', '4위', '5위'];
+  list.innerHTML = data.topKeywords.map((k, i) => `
+    <div class="keyword-rank-item">
+      <span class="keyword-rank-num">${rankLabels[i]}</span>
+      <span class="keyword-text">${k.keyword}</span>
+      <span class="keyword-brand-count">${k.brandCount}개 브랜드 사용</span>
+    </div>
+  `).join('');
+}
+
 function renderAllHiddenBrands(data) {
   const list = document.getElementById('all-hidden-list');
   if (!data.allHiddenBrands || !data.allHiddenBrands.length) {
@@ -1366,6 +1435,7 @@ async function loadDashboard() {
 
     renderSummary(data);
     renderTop3(data);
+    renderKeywords(data);
     renderAllHiddenBrands(data);
     renderRecent(data);
     renderBlockChart(data);
@@ -1402,7 +1472,7 @@ function initSidebarObserver() {
     });
   }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
 
-  const sectionIds = ['section-top3','section-1','section-2','section-3','section-4','section-5','section-6','section-8','section-9'];
+  const sectionIds = ['section-top3','section-1','section-2','section-3','section-4','section-keyword','section-5','section-6','section-8','section-9'];
 
   sectionIds.forEach(id => {
     const el = document.getElementById(id);

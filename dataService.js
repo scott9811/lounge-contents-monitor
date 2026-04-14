@@ -394,6 +394,48 @@ async function fetchDashboardData() {
     }))
     .sort((a, b) => new Date(a.updatedAt) - new Date(b.updatedAt));
 
+  // 블럭 키워드 분석: 제목·부제에서 2개 이상 브랜드가 공통 사용한 키워드 TOP 5
+  const KEYWORD_STOP_WORDS = new Set([
+    '이', '은', '는', '을', '를', '에', '의', '가', '과', '와', '에서',
+    '으로', '로', '도', '만', '부터', '까지', '한', '등', '및', '더',
+    '위한', '위해', '통해', '같은', '대한', '관련', '전용', '공식',
+    '새로운', '특별한', '진행', '출시', '오픈', '시작', '안내', '소개',
+    'the', 'a', 'an', 'of', 'in', 'for', 'with', 'and', 'or', 'by', 'at', 'to',
+    'NEW', 'new', 'SS', 'FW', 'AW', 'SS24', 'SS25', 'SS26', 'FW24', 'FW25',
+  ]);
+  const kwBrandMap = {};
+  for (const row of rows) {
+    if (!isContentModuleActive(row.tree)) continue;
+    const blocks = getBlocksForBrand(row.tree);
+    const brandIdx = Number(row.brand_idx);
+    const seenKw = new Set();
+    for (const block of blocks) {
+      const p = block.props || {};
+      const textSources = [
+        p.title, p.subtitle,
+        ...(p.items || []).flatMap((it) => [it.title, it.subtitle]),
+      ].filter(Boolean);
+      for (const text of textSources) {
+        const words = String(text)
+          .split(/[\s,./!?·\-_[\]()「」『』【】〔〕%]+/)
+          .map((w) => w.replace(/[^\uAC00-\uD7A3\u1100-\u11FFa-zA-Z0-9]/g, '').trim())
+          .filter((w) => w.length >= 2 && !KEYWORD_STOP_WORDS.has(w) && !/^\d+$/.test(w));
+        for (const kw of words) {
+          if (!seenKw.has(kw)) {
+            seenKw.add(kw);
+            if (!kwBrandMap[kw]) kwBrandMap[kw] = new Set();
+            kwBrandMap[kw].add(brandIdx);
+          }
+        }
+      }
+    }
+  }
+  const topKeywords = Object.entries(kwBrandMap)
+    .filter(([, s]) => s.size >= 2)
+    .sort((a, b) => b[1].size - a[1].size)
+    .slice(0, 5)
+    .map(([keyword, s]) => ({ keyword, brandCount: s.size }));
+
   // TOP 3: 노출 중인 블럭 개수 기준 상위 3개 브랜드
   const topBrands = [...brandDetails]
     .sort((a, b) => b.visibleCount - a.visibleCount)
@@ -424,6 +466,7 @@ async function fetchDashboardData() {
     noBlockBrands,
     longInactiveBrands,
     topBrands,
+    topKeywords,
   };
 }
 
