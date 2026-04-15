@@ -417,16 +417,22 @@ async function fetchDashboardData() {
       ].filter(Boolean);
       for (const text of textSources) {
         const cleanText = String(text).trim();
-        const words = cleanText
-          .split(/[\s,./!?·\-_[\]()「」『』【】〔〕%]+/)
-          .map((w) => w.replace(/[^\uAC00-\uD7A3\u1100-\u11FFa-zA-Z0-9]/g, '').trim())
-          .filter((w) => w.length >= 2 && !KEYWORD_STOP_WORDS.has(w) && !/^\d+$/.test(w));
-        for (const kw of words) {
-          if (!kwBrandMap[kw]) kwBrandMap[kw] = new Map();
-          if (!kwBrandMap[kw].has(brandIdx)) {
-            kwBrandMap[kw].set(brandIdx, { brandName: getBrandName(brandIdx), phrases: new Set() });
+        // 구두점으로 분리 후 각 구절 내에서 2-gram 추출
+        const segments = cleanText.split(/[,./!?·\-_[\]()「」『』【】〔〕%]+/);
+        for (const segment of segments) {
+          const tokens = segment
+            .split(/\s+/)
+            .map((w) => w.replace(/[^\uAC00-\uD7A3\u1100-\u11FFa-zA-Z0-9]/g, '').trim())
+            .filter((w) => w.length >= 1 && !KEYWORD_STOP_WORDS.has(w) && !/^\d+$/.test(w));
+          // 인접한 두 단어 조합(2-gram)을 키워드로 사용
+          for (let i = 0; i < tokens.length - 1; i++) {
+            const kw = `${tokens[i]} ${tokens[i + 1]}`;
+            if (!kwBrandMap[kw]) kwBrandMap[kw] = new Map();
+            if (!kwBrandMap[kw].has(brandIdx)) {
+              kwBrandMap[kw].set(brandIdx, { brandName: getBrandName(brandIdx), phrases: new Set() });
+            }
+            kwBrandMap[kw].get(brandIdx).phrases.add(cleanText);
           }
-          kwBrandMap[kw].get(brandIdx).phrases.add(cleanText);
         }
       }
     }
