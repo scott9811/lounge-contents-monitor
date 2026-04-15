@@ -369,7 +369,7 @@
     /* ── Section 1: Brand Selector ── */
     .brand-selector {
       display: grid;
-      grid-template-columns: 200px 1fr;
+      grid-template-columns: 240px 1fr;
       gap: 0;
       min-height: 480px;
     }
@@ -382,7 +382,9 @@
       max-height: 560px;
     }
     .brand-selector-btn {
-      display: block;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       width: 100%;
       text-align: left;
       padding: 10px 14px;
@@ -396,6 +398,15 @@
       font-family: inherit;
       transition: background 0.1s, color 0.1s, border-color 0.1s;
       line-height: 1.4;
+    }
+    .brand-btn-name { flex: 1; text-align: left; }
+    .brand-btn-count {
+      font-size: 11px;
+      color: var(--text-subtle);
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 1px 8px;
+      flex-shrink: 0;
     }
     .brand-selector-btn:hover {
       background: var(--primary-light);
@@ -415,6 +426,7 @@
       max-height: 560px;
       border-left: 1px solid var(--border);
     }
+    #keyword-detail { padding-top: 16px; }
     .brand-detail-header {
       display: flex;
       align-items: center;
@@ -1310,7 +1322,10 @@ function renderBrandSelector(data) {
   }
 
   listEl.innerHTML = _brandDetails.map((b, i) => `
-    <button class="brand-selector-btn" data-idx="${i}" onclick="selectBrand(${i})">${b.brandName}</button>
+    <button class="brand-selector-btn" data-idx="${i}" onclick="selectBrand(${i})">
+      <span class="brand-btn-name">${b.brandName}</span>
+      <span class="brand-btn-count">${b.visibleCount}</span>
+    </button>
   `).join('');
 
 
