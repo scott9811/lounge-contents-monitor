@@ -4,7 +4,7 @@
     {
       "name": "lounge-monitor",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["lounge-contents-monitor/server.js"],
+      "runtimeArgs": ["server.js"],
       "port": 3000
     }
   ]

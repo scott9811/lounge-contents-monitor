@@ -403,12 +403,12 @@ async function fetchDashboardData() {
     'the', 'a', 'an', 'of', 'in', 'for', 'with', 'and', 'or', 'by', 'at', 'to',
     'NEW', 'new', 'SS', 'FW', 'AW', 'SS24', 'SS25', 'SS26', 'FW24', 'FW25',
   ]);
+  // kwBrandMap: keyword -> Map<brandIdx, {brandName, phrases: Set<string>}>
   const kwBrandMap = {};
   for (const row of rows) {
     if (!isContentModuleActive(row.tree)) continue;
     const blocks = getBlocksForBrand(row.tree);
     const brandIdx = Number(row.brand_idx);
-    const seenKw = new Set();
     for (const block of blocks) {
       const p = block.props || {};
       const textSources = [
@@ -416,28 +416,33 @@ async function fetchDashboardData() {
         ...(p.items || []).flatMap((it) => [it.title, it.subtitle]),
       ].filter(Boolean);
       for (const text of textSources) {
-        const words = String(text)
+        const cleanText = String(text).trim();
+        const words = cleanText
           .split(/[\s,./!?·\-_[\]()「」『』【】〔〕%]+/)
           .map((w) => w.replace(/[^\uAC00-\uD7A3\u1100-\u11FFa-zA-Z0-9]/g, '').trim())
           .filter((w) => w.length >= 2 && !KEYWORD_STOP_WORDS.has(w) && !/^\d+$/.test(w));
         for (const kw of words) {
-          if (!seenKw.has(kw)) {
-            seenKw.add(kw);
-            if (!kwBrandMap[kw]) kwBrandMap[kw] = new Set();
-            kwBrandMap[kw].add(brandIdx);
+          if (!kwBrandMap[kw]) kwBrandMap[kw] = new Map();
+          if (!kwBrandMap[kw].has(brandIdx)) {
+            kwBrandMap[kw].set(brandIdx, { brandName: getBrandName(brandIdx), phrases: new Set() });
           }
+          kwBrandMap[kw].get(brandIdx).phrases.add(cleanText);
         }
       }
     }
   }
   const topKeywords = Object.entries(kwBrandMap)
-    .filter(([, s]) => s.size >= 2)
+    .filter(([, m]) => m.size >= 2)
     .sort((a, b) => b[1].size - a[1].size)
     .slice(0, 10)
-    .map(([keyword, s]) => ({
+    .map(([keyword, brandMap]) => ({
       keyword,
-      brandCount: s.size,
-      brands: Array.from(s).map((idx) => ({ brandIdx: idx, brandName: getBrandName(idx) })),
+      brandCount: brandMap.size,
+      brands: Array.from(brandMap.entries()).map(([idx, info]) => ({
+        brandIdx: idx,
+        brandName: info.brandName,
+        phrases: Array.from(info.phrases),
+      })),
     }));
 
   // TOP 3: 노출 중인 블럭 개수 기준 상위 3개 브랜드
