@@ -434,7 +434,7 @@ async function fetchDashboardData() {
   const topKeywords = Object.entries(kwBrandMap)
     .filter(([, m]) => m.size >= 2)
     .sort((a, b) => b[1].size - a[1].size)
-    .slice(0, 10)
+    .slice(0, 20)
     .map(([keyword, brandMap]) => ({
       keyword,
       brandCount: brandMap.size,
