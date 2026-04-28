@@ -235,10 +235,10 @@ async function fetchDashboardData() {
   thisWeekMonday.setHours(0, 0, 0, 0);
   thisWeekMonday.setDate(kstNow.getDate() - daysFromMonday);
 
-  // 지난 주 월요일~일요일 00:00:00 KST
-  const lastWeekMonday = new Date(thisWeekMonday);
-  lastWeekMonday.setDate(thisWeekMonday.getDate() - 7);
-  const lastWeekSunday = new Date(thisWeekMonday); // 이번 주 월요일 = 지난주 일요일 자정
+  // 지난 주 일요일(이번 주 월요일 00:00) 기준 14일 전
+  const lastWeekSunday = new Date(thisWeekMonday); // 이번 주 월요일 00:00 = 지난 주 일요일 자정
+  const fourteenDaysBeforeThisMonday = new Date(thisWeekMonday);
+  fourteenDaysBeforeThisMonday.setDate(thisWeekMonday.getDate() - 14);
 
   // 브랜드별 최신 레코드만 유지 (brand_idx 기준)
   const brandMap = new Map();
@@ -276,10 +276,10 @@ async function fetchDashboardData() {
     }))
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
-  // 지난 주(월~일) 업데이트 브랜드 수 — 전주 대비 증감용 (KST 기준 월요일~일요일)
+  // 전주 기준: 지난 일요일(이번 주 월요일 00:00)을 기준으로 14일 창을 적용한 수
   const prevPeriodUpdatedCount = rows.filter((r) => {
     const d = new Date(new Date(r.updated_at).toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
-    return d >= lastWeekMonday && d < lastWeekSunday;
+    return d >= fourteenDaysBeforeThisMonday && d < lastWeekSunday;
   }).length;
   const recentlyUpdatedDelta = recentlyUpdated.length - prevPeriodUpdatedCount;
 
