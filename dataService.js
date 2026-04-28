@@ -235,10 +235,6 @@ async function fetchDashboardData() {
   thisWeekMonday.setHours(0, 0, 0, 0);
   thisWeekMonday.setDate(kstNow.getDate() - daysFromMonday);
 
-  // 지난 주 일요일(이번 주 월요일 00:00) 기준 14일 전
-  const lastWeekSunday = new Date(thisWeekMonday); // 이번 주 월요일 00:00 = 지난 주 일요일 자정
-  const fourteenDaysBeforeThisMonday = new Date(thisWeekMonday);
-  fourteenDaysBeforeThisMonday.setDate(thisWeekMonday.getDate() - 14);
 
   // 브랜드별 최신 레코드만 유지 (brand_idx 기준)
   const brandMap = new Map();
@@ -275,13 +271,6 @@ async function fetchDashboardData() {
       updatedAt: r.updated_at,
     }))
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-
-  // 전주 기준: 지난 일요일(이번 주 월요일 00:00)을 기준으로 14일 창을 적용한 수
-  const prevPeriodUpdatedCount = rows.filter((r) => {
-    const d = new Date(new Date(r.updated_at).toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
-    return d >= fourteenDaysBeforeThisMonday && d < lastWeekSunday;
-  }).length;
-  const recentlyUpdatedDelta = recentlyUpdated.length - prevPeriodUpdatedCount;
 
   // 블럭 유형별 총 사용 개수 + 브랜드별 목록
   const blockStats = {};
@@ -466,7 +455,6 @@ async function fetchDashboardData() {
     totalBrands,
     activeContentModule: activeBrands.length,
     recentlyUpdatedCount: recentlyUpdated.length,
-    recentlyUpdatedDelta,
     urlIssueBrandCount,
     activeBrands,
     inactiveBrands,
