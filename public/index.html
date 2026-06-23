@@ -430,6 +430,25 @@
     #keyword-detail { padding-top: 16px; }
     #brand-detail { padding-top: 16px; }
     #section-1 .brand-selector-btn { padding-left: 14px; }
+
+    /* Block search input */
+    .block-search-wrap { position: relative; display: flex; align-items: center; }
+    .block-search-icon {
+      position: absolute; left: 11px; width: 14px; height: 14px;
+      color: var(--text-subtle); pointer-events: none;
+    }
+    .block-search-input {
+      height: 34px; min-width: 200px;
+      border: 1px solid var(--border); border-radius: 9999px;
+      padding: 0 14px 0 32px;
+      background: var(--bg);
+      font-size: 13px; font-family: inherit; color: var(--text);
+      letter-spacing: -0.2px; outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .block-search-input::placeholder { color: var(--text-subtle); }
+    .block-search-input:focus { border-color: var(--primary); background: var(--surface); }
+    .block-search-input::-webkit-search-cancel-button { cursor: pointer; }
     #section-keyword .brand-selector { min-height: unset; height: 480px; }
     #section-keyword .brand-selector-list { max-height: unset; height: 100%; overflow-y: auto; }
     #section-keyword .brand-selector-detail { max-height: unset; height: 100%; overflow-y: auto; }
@@ -900,6 +919,13 @@
           <div class="tooltip-box">콘텐츠 모듈을 활성화한 브랜드 목록입니다. 블럭 개수가 많은 순으로 정렬됩니다.</div>
         </div>
       </div>
+      <div class="block-search-wrap">
+        <svg class="block-search-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input type="search" id="block-search" class="block-search-input" placeholder="제목/부제 검색..." oninput="applyBlockSearch(this.value)" />
+      </div>
     </div>
     <div class="section-body" style="padding: 0;">
       <div class="brand-selector">
@@ -1262,8 +1288,54 @@ function renderBlockProps(block) {
   `;
 }
 
+let _allBrandDetails = [];
 let _brandDetails = [];
 let _selectedIdx = 0;
+
+function getBlockSearchText(block) {
+  const p = block.props || {};
+  const texts = [p.title, p.subtitle];
+  if (p.items) p.items.forEach(item => { texts.push(item.title, item.subtitle); });
+  return texts.filter(Boolean).join(' ').toLowerCase();
+}
+
+function rebuildBrandList() {
+  const listEl = document.getElementById('brand-list');
+  if (!_brandDetails.length) {
+    listEl.innerHTML = '<div class="empty">검색 결과 없음</div>';
+    document.getElementById('brand-detail').innerHTML = '';
+    return false;
+  }
+  listEl.innerHTML = _brandDetails.map((b, i) => `
+    <button class="brand-selector-btn" data-idx="${i}" onclick="selectBrand(${i})">
+      <span class="brand-btn-name">${b.brandName}</span>
+      <span class="brand-btn-count">${b.visibleCount}</span>
+    </button>
+  `).join('');
+  return true;
+}
+
+function applyBlockSearch(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) {
+    _brandDetails = _allBrandDetails;
+  } else {
+    _brandDetails = _allBrandDetails
+      .map(b => {
+        const matchingBlocks = b.blocks.filter(block => getBlockSearchText(block).includes(q));
+        if (!matchingBlocks.length) return null;
+        return {
+          ...b,
+          blocks: matchingBlocks,
+          visibleCount: matchingBlocks.filter(bl => bl.visible).length,
+          hiddenCount: matchingBlocks.filter(bl => !bl.visible).length,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.visibleCount - a.visibleCount);
+  }
+  if (rebuildBrandList()) selectBrand(0);
+}
 
 function renderBrandDetail(idx) {
   const brand = _brandDetails[idx];
@@ -1314,24 +1386,18 @@ function selectBrand(idx) {
 }
 
 function renderBrandSelector(data) {
-  // 블럭 수 내림차순 정렬
-  _brandDetails = [...data.brandDetails].sort((a, b) => b.visibleCount - a.visibleCount);
-  const listEl = document.getElementById('brand-list');
+  _allBrandDetails = [...data.brandDetails].sort((a, b) => b.visibleCount - a.visibleCount);
+  _brandDetails = _allBrandDetails;
 
-  if (!_brandDetails.length) {
-    listEl.innerHTML = '<div class="empty">활성화 브랜드 없음</div>';
+  const searchEl = document.getElementById('block-search');
+  if (searchEl) searchEl.value = '';
+
+  if (!_allBrandDetails.length) {
+    document.getElementById('brand-list').innerHTML = '<div class="empty">활성화 브랜드 없음</div>';
     return;
   }
 
-  listEl.innerHTML = _brandDetails.map((b, i) => `
-    <button class="brand-selector-btn" data-idx="${i}" onclick="selectBrand(${i})">
-      <span class="brand-btn-name">${b.brandName}</span>
-      <span class="brand-btn-count">${b.visibleCount}</span>
-    </button>
-  `).join('');
-
-
-  selectBrand(0);
+  if (rebuildBrandList()) selectBrand(0);
 }
 
 function renderUrlIssues(data) {
