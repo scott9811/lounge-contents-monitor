@@ -1294,8 +1294,9 @@ let _selectedIdx = 0;
 
 function getBlockSearchText(block) {
   const p = block.props || {};
-  const texts = [p.title, p.subtitle, p.link];
-  if (p.items) p.items.forEach(item => { texts.push(item.title, item.subtitle, item.link); });
+  const texts = [p.title, p.subtitle, p.text, p.link];
+  if (p.items) p.items.forEach(item => { texts.push(item.title, item.subtitle, item.text, item.label, item.link); });
+  if (p.channels) p.channels.forEach(ch => { texts.push(ch.title, ch.text, ch.label, ch.link); });
   return texts.filter(Boolean).join(' ').toLowerCase();
 }
 
