@@ -1294,8 +1294,8 @@ let _selectedIdx = 0;
 
 function getBlockSearchText(block) {
   const p = block.props || {};
-  const texts = [p.title, p.subtitle];
-  if (p.items) p.items.forEach(item => { texts.push(item.title, item.subtitle); });
+  const texts = [p.title, p.subtitle, p.link];
+  if (p.items) p.items.forEach(item => { texts.push(item.title, item.subtitle, item.link); });
   return texts.filter(Boolean).join(' ').toLowerCase();
 }
 
